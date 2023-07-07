@@ -1,0 +1,18 @@
+[package]
+name = "cloudflare-bot-protect-check"
+authors = ["Crunchy Labs Maintainers"]
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.3", features = ["derive", "string"] }
+reqwest = { version = "0.11.18", features = ["blocking", "cookies", "json", "rustls-tls"], default-features = false }
+rustls = { version = "0.21.0", features = ["dangerous_configuration"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+webpki-roots = "0.24"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
