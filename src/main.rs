@@ -7,6 +7,15 @@ use std::path::Path;
 use std::{fs, io};
 
 #[derive(Clone, Debug, ValueEnum)]
+enum Method {
+    Get,
+    Post,
+    Put,
+    Patch,
+    Delete,
+}
+
+#[derive(Clone, Debug, ValueEnum)]
 #[allow(non_camel_case_types)]
 enum CipherSuite {
     TLS13_AES_256_GCM_SHA384,
@@ -124,10 +133,25 @@ enum Format {
     Json,
 }
 
+fn parse_header(s: &str) -> Result<(String, String), String> {
+    if let Some((key, value)) = s.split_once("=") {
+        Ok((key.to_string(), value.to_string()))
+    } else {
+        Err(format!("couldn't find '=' in header definition {}", s))
+    }
+}
+
 /// cloudflare-bot-protect-check - check which user agents are blocked by the cloudflare bot protection
 #[derive(Parser)]
 #[command(arg_required_else_help(true))]
 struct Cli {
+    /// Http method to use
+    #[clap(long, value_enum, default_value_t = Method::Get)]
+    method: Method,
+    /// Headers to send with. Must be given as `key=value`
+    #[clap(long, value_parser = parse_header)]
+    header: Vec<(String, String)>,
+
     /// Use custom tls settings. Cloudflare sometimes uses tls fingerprinting to decide if a request
     /// is made by a bot. Custom tls settings might be able to bypass this as well. Used tls backend
     /// will be rustls
@@ -167,7 +191,17 @@ fn main() -> Result<()> {
 
     for user_agent in user_agents {
         let client = build_client(&cli, &user_agent)?;
-        let result = client.get(&cli.url).send()?;
+        let mut request = match cli.method {
+            Method::Get => client.get(&cli.url),
+            Method::Post => client.post(&cli.url),
+            Method::Put => client.put(&cli.url),
+            Method::Patch => client.patch(&cli.url),
+            Method::Delete => client.delete(&cli.url),
+        };
+        for (key, value) in &cli.header {
+            request = request.header(key, value)
+        }
+        let result = request.send()?;
 
         match &cli.format {
             Format::Plain => println!("{} - {}", result.status().as_u16(), user_agent),
