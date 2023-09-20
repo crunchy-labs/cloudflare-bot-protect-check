@@ -5,12 +5,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0"
-clap = { version = "4.4", features = ["derive", "string"] }
+anyhow = "1.0.75"
+clap = { version = "4.4.4", features = ["derive", "string"] }
 reqwest = { version = "0.11.20", features = ["blocking", "cookies", "json", "rustls-tls"], default-features = false }
+# version must always be the same as in `reqwest` to ensure abi compatability
 rustls = { version = "0.21.6", features = ["dangerous_configuration"] }
-serde_json = { version = "1.0", features = ["preserve_order"] }
-webpki-roots = "0.25"
+serde_json = { version = "1.0.107", features = ["preserve_order"] }
+webpki-roots = "0.25.2"
 
 [profile.release]
 strip = true
